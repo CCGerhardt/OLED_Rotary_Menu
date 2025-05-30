@@ -1,27 +1,93 @@
-/**
- * @Author: Cary Gerhardt
- * @Date:   2025-05-29 17:12:16
- * @Last Modified by:   Cary Gerhardt
- * @Last Modified time: 2025-05-29 17:13:20
- */
 #include <Arduino.h>
+#include <Wire.h>
+#include <SPI.h>
+#include "DHT.h"
+#include "Adafruit_GFX.h"
+#include "Adafruit_SSD1306.h"
 
-// put function declarations here:
-int myFunction(int, int);
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define DEGREE 247
+
+#define OLED_RESET -1 // Reset pin
+#define SCREEN_ADDRESS 0x3C
+
+Adafruit_SSD1306 display(SCREEN_WIDTH,SCREEN_HEIGHT,&Wire, OLED_RESET);
+
+#define CLK 32
+#define DT 35
+#define SW 34
+
+void testScrollText(void);
+void mainMenu(void);
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
-  Serial.begin(9600);
-}
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
+
+  // Show initial display buffer contents on the screen --
+  // the library initializes this with an Adafruit splash screen.
+  display.display();
+  delay(500); // Pause for 0.5 seconds
+
+  // Clear the buffer
+  display.clearDisplay();
+  // testScrollText();
+  }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  Serial.println("Hello World");
-  delay(1000);
+  mainMenu();
 }
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+void mainMenu(void){
+  uint8_t width = 128;
+  uint8_t height = 11;
+  uint8_t x_cord = 0;
+  uint8_t upper_y = 0;
+  uint8_t lower_y = SCREEN_HEIGHT-height;
+  uint8_t numLines = 3;
+
+  display.drawRect(x_cord,upper_y,width,height, SSD1306_WHITE);
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(x_cord+2, upper_y+2);
+
+  for (uint8_t i = 0; i < numLines;i++){
+    display.drawFastHLine(x_cord,upper_y+height+10*(i+1),width,SSD1306_WHITE);
+  }
+
+  display.printf("Test: %.2f%cC\n",(float)13.0,(char)DEGREE);
+
+  // display.drawFastHLine(x_cord,)
+  display.drawRect(x_cord,lower_y,width,height, SSD1306_WHITE);
+  display.display();
+}
+void testScrollText(void) {
+  display.clearDisplay();
+
+  display.setTextSize(2); // Draw 2X-scale text
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(10, 0);
+  display.println(F("scroll"));
+  display.display();      // Show initial text
+  delay(100);
+
+  // Scroll in various directions, pausing in-between:
+  display.startscrollright(0x00, 0x0F);
+  delay(2000);
+  display.stopscroll();
+  delay(1000);
+  display.startscrollleft(0x00, 0x0F);
+  delay(2000);
+  display.stopscroll();
+  delay(1000);
+  display.startscrolldiagright(0x00, 0x07);
+  delay(2000);
+  display.startscrolldiagleft(0x00, 0x07);
+  delay(2000);
+  display.stopscroll();
+  delay(1000);
 }
